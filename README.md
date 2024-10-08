@@ -19,9 +19,8 @@ To include a file:
 
 You can download this repo, and use it as the basis for your new project, or you can use Degit to download the files to your current working directory:
 
-```
+```bash
 npm install -g degit
-
 degit https://github.com/dashpilot/html-kit
 npm install
 npm run dev
