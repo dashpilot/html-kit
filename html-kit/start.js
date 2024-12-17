@@ -1,6 +1,6 @@
 const { spawnSync, spawn } = require('child_process');
 
-// Start the HTTP server, for some reason it only works if I first start the server, and then the build
+// Start the HTTP server
 try {
     const serverProcess = spawn('node', ['html-kit/server.js'], { stdio: 'inherit' });
 

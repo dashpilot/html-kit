@@ -58,11 +58,9 @@ async function build() {
         const minifiedCss = new CleanCSS().minify(Array.from(stylesSet).join('\n')).styles;
         const componentsCssPath = path.join(publicDir, 'components.css');
         fs.writeFileSync(componentsCssPath, minifiedCss, 'utf-8');
-        // console.log('Components CSS written to public/components.css');
 
         // Minify and write the extracted scripts to a file
         const scriptsContent = Array.from(scriptsSet).join('\n');
-        // console.log('Scripts content before minification:', scriptsContent); // Log the scripts content
 
         if (!scriptsContent.trim()) {
             console.error('No JavaScript content found to minify.');
@@ -71,7 +69,7 @@ async function build() {
 
         // Use Terser to minify the JavaScript
         const minifiedJsResult = await minify(scriptsContent, {
-            ecma: 5, // Specify ECMAScript version
+            ecma: 5,
             compress: true,
             mangle: true,
         });
@@ -107,31 +105,36 @@ async function build() {
     }
 }
 
-// Set up WebSocket server
-const wss = new WebSocket.Server({ port: 8080 });
+function startServerAndWatch() {
+    // Set up WebSocket server
+    const wss = new WebSocket.Server({ port: 8080 });
 
-function notifyClients() {
-    wss.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-            client.send('reload');
-        }
-    });
+    function notifyClients() {
+        wss.clients.forEach((client) => {
+            if (client.readyState === WebSocket.OPEN) {
+                client.send('reload');
+            }
+        });
+    }
+
+    // Watch the src directory for changes
+    function watchSrcDirectory() {
+        const srcDir = path.join(__dirname, '..', 'src');
+        fs.watch(srcDir, { recursive: true }, (eventType, filename) => {
+            if (filename) {
+                console.log(`File changed: ${filename}`);
+                build(); // Re-run the build process on changes
+                notifyClients(); // Notify clients after build
+            }
+        });
+
+        console.log('Watching for changes in src directory...');
+    }
+
+    watchSrcDirectory();
 }
 
-// Watch the src directory for changes
-function watchSrcDirectory() {
-    const srcDir = path.join(__dirname, '..', 'src');
-    fs.watch(srcDir, { recursive: true }, (eventType, filename) => {
-        if (filename) {
-            console.log(`File changed: ${filename}`);
-            build(); // Re-run the build process on changes
-            notifyClients(); // Notify clients after build
-        }
-    });
-
-    console.log('Watching for changes in src directory...');
+// Execute build if this script is run directly
+if (require.main === module) {
+    build();
 }
-
-// Execute build and start watching
-build();
-watchSrcDirectory();
