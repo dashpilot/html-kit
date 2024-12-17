@@ -59,6 +59,18 @@ async function build() {
         const componentsCssPath = path.join(publicDir, 'components.css');
         fs.writeFileSync(componentsCssPath, minifiedCss, 'utf-8');
 
+        // Minify the src/style.css file
+        const srcCssPath = path.join(__dirname, '..', 'src', 'style.css');
+        const destCssPath = path.join(publicDir, 'style.css');
+        if (fs.existsSync(srcCssPath)) {
+            const styleCssContent = fs.readFileSync(srcCssPath, 'utf-8');
+            const minifiedStyleCss = new CleanCSS().minify(styleCssContent).styles;
+            fs.writeFileSync(destCssPath, minifiedStyleCss, 'utf-8');
+            console.log('Minified CSS file written to public/style.css');
+        } else {
+            console.error('CSS file not found: src/style.css');
+        }
+
         // Minify and write the extracted scripts to a file
         const scriptsContent = Array.from(scriptsSet).join('\n');
 
@@ -88,16 +100,6 @@ async function build() {
         const componentsJsPath = path.join(publicDir, 'components.js');
         fs.writeFileSync(componentsJsPath, minifiedJs, 'utf-8');
         console.log('Components JS written to public/components.js');
-
-        // Copy the CSS file to the public directory
-        const srcCssPath = path.join(__dirname, '..', 'src', 'style.css');
-        const destCssPath = path.join(publicDir, 'style.css');
-        if (fs.existsSync(srcCssPath)) {
-            fs.copyFileSync(srcCssPath, destCssPath);
-            console.log('CSS file copied to public/style.css');
-        } else {
-            console.error('CSS file not found: src/style.css');
-        }
 
         console.log('Build complete. Output written to public/index.html');
     } catch (error) {
