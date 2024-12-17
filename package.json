@@ -11,6 +11,8 @@
     "license": "ISC",
     "description": "",
     "dependencies": {
+        "clean-css": "^5.3.3",
+        "terser": "^5.37.0",
         "ws": "^8.18.0"
     }
 }

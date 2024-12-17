@@ -1,6 +1,8 @@
 const fs = require('fs');
 const path = require('path');
 const WebSocket = require('ws');
+const CleanCSS = require('clean-css');
+const { minify } = require('terser');
 
 let stylesSet = new Set();
 let scriptsSet = new Set();
@@ -36,7 +38,7 @@ function processIncludes(filePath) {
     return content;
 }
 
-function build() {
+async function build() {
     try {
         // Ensure the public directory exists
         const publicDir = path.join(__dirname, '..', 'public');
@@ -52,13 +54,41 @@ function build() {
         const outputFilePath = path.join(publicDir, 'index.html');
         fs.writeFileSync(outputFilePath, htmlContent, 'utf-8');
 
-        // Write the extracted styles and scripts to their respective files
+        // Minify and write the extracted styles to a file
+        const minifiedCss = new CleanCSS().minify(Array.from(stylesSet).join('\n')).styles;
         const componentsCssPath = path.join(publicDir, 'components.css');
-        fs.writeFileSync(componentsCssPath, Array.from(stylesSet).join('\n'), 'utf-8');
-        console.log('Components CSS written to public/components.css');
+        fs.writeFileSync(componentsCssPath, minifiedCss, 'utf-8');
+        // console.log('Components CSS written to public/components.css');
+
+        // Minify and write the extracted scripts to a file
+        const scriptsContent = Array.from(scriptsSet).join('\n');
+        // console.log('Scripts content before minification:', scriptsContent); // Log the scripts content
+
+        if (!scriptsContent.trim()) {
+            console.error('No JavaScript content found to minify.');
+            return;
+        }
+
+        // Use Terser to minify the JavaScript
+        const minifiedJsResult = await minify(scriptsContent, {
+            ecma: 5, // Specify ECMAScript version
+            compress: true,
+            mangle: true,
+        });
+
+        if (minifiedJsResult.error) {
+            console.error('Error during JS minification:', minifiedJsResult.error);
+            return;
+        }
+
+        const minifiedJs = minifiedJsResult.code;
+        if (!minifiedJs) {
+            console.error('Minification resulted in undefined code.');
+            return;
+        }
 
         const componentsJsPath = path.join(publicDir, 'components.js');
-        fs.writeFileSync(componentsJsPath, Array.from(scriptsSet).join('\n'), 'utf-8');
+        fs.writeFileSync(componentsJsPath, minifiedJs, 'utf-8');
         console.log('Components JS written to public/components.js');
 
         // Copy the CSS file to the public directory
